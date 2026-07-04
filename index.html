@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F1B14">
+<title>Heart Track</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0F1B14;
+    --card: #17271D;
+    --card-hi: #1F3428;
+    --line: #2A4335;
+    --text: #EAF2EC;
+    --muted: #8AA593;
+    --green: #4ADE80;
+    --lime: #A3E635;
+    --yellow: #FACC15;
+    --orange: #FB923C;
+    --red: #F87171;
+    --accent: #4ADE80;
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body { padding: 0 0 100px; max-width: 640px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    padding: 24px 20px 16px;
+    position: sticky; top: 0; z-index: 20;
+    background: linear-gradient(180deg, var(--bg) 70%, transparent);
+  }
+  .header h1 {
+    font-size: 15px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .header .goal {
+    font-size: 13px; color: var(--muted); margin-top: 2px; font-weight: 500;
+  }
+  .header .goal b { color: var(--green); }
+
+  /* Hero LDL progress */
+  .hero {
+    margin: 8px 20px 20px; padding: 22px; border-radius: 20px;
+    background: var(--card); border: 1px solid var(--line);
+    position: relative; overflow: hidden;
+  }
+  .hero-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .hero-nums { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+  .hero-nums .cur { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; }
+  .hero-nums .arrow { color: var(--muted); font-size: 20px; }
+  .hero-nums .goalnum { font-size: 24px; font-weight: 700; color: var(--green); }
+  .hero-nums .unit { font-size: 13px; color: var(--muted); margin-left: 2px; }
+  .bar-track { margin-top: 16px; height: 10px; border-radius: 6px; background: #0C140F; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--orange), var(--lime)); transition: width 0.6s ease; }
+  .hero-sub { margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+  /* Section titles */
+  .sec-title {
+    padding: 6px 22px; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* Today card */
+  .today { margin: 4px 20px 20px; }
+  .today-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 2px 12px;
+  }
+  .today-date { font-size: 18px; font-weight: 700; }
+  .day-grade {
+    font-size: 22px; font-weight: 800; width: 52px; height: 52px;
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    background: var(--card-hi);
+  }
+  .meal-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; margin-bottom: 8px;
+  }
+  .meal-slot {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); width: 34px; flex-shrink: 0; font-weight: 700;
+  }
+  .meal-body { flex: 1; min-width: 0; }
+  .meal-name { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .meal-note { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+  .meal-grade {
+    font-size: 15px; font-weight: 800; width: 34px; height: 34px; flex-shrink: 0;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: var(--card-hi);
+  }
+  .meal-empty { opacity: 0.5; }
+  .meal-empty .meal-name { font-weight: 500; font-style: italic; color: var(--muted); }
+
+  /* Week trend */
+  .trend { margin: 4px 20px 20px; padding: 18px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+  .trend-bars { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; height: 120px; margin-bottom: 8px; }
+  .trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .trend-bar { width: 100%; max-width: 40px; border-radius: 8px 8px 4px 4px; transition: height 0.5s ease; min-height: 6px; }
+  .trend-day { font-size: 10px; color: var(--muted); font-weight: 600; }
+  .trend-val { font-size: 11px; font-weight: 800; }
+  .trend-note { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.4; padding-top: 6px; border-top: 1px solid var(--line); }
+  .trend-note b { color: var(--lime); }
+
+  /* A-list */
+  .alist { margin: 4px 20px 20px; }
+  .alist-item {
+    display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 7px;
+  }
+  .alist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .alist-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .alist-grade { font-size: 13px; font-weight: 800; color: var(--green); }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 40; width: min(600px, calc(100% - 40px));
+    background: var(--green); color: #08130C;
+    border: none; border-radius: 16px; padding: 17px; font-size: 16px; font-weight: 800;
+    box-shadow: 0 8px 30px rgba(74,222,128,0.35); cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  .fab:active { transform: translateX(-50%) scale(0.97); }
+
+  /* Modal / sheet */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    background: var(--bg); width: 100%; max-width: 640px;
+    border-radius: 24px 24px 0 0; border-top: 1px solid var(--line);
+    max-height: 90vh; overflow-y: auto; transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); padding-bottom: 30px;
+  }
+  .overlay.open .sheet { transform: translateY(0); }
+  .sheet-grip { width: 40px; height: 4px; background: var(--line); border-radius: 3px; margin: 12px auto 4px; }
+  .sheet-head { padding: 12px 20px 8px; display:flex; justify-content: space-between; align-items:center; }
+  .sheet-head h2 { font-size: 20px; font-weight: 800; }
+  .sheet-close { background: var(--card-hi); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+
+  .field { padding: 8px 20px; }
+  .field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; display: block; margin-bottom: 8px; }
+  .slot-pick { display: flex; gap: 8px; }
+  .slot-btn { flex: 1; padding: 11px; border-radius: 11px; background: var(--card); border: 1px solid var(--line); color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; text-transform: capitalize; }
+  .slot-btn.active { background: var(--green); color: #08130C; border-color: var(--green); }
+
+  .common-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    padding: 9px 13px; border-radius: 20px; background: var(--card); border: 1px solid var(--line);
+    color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .chip:active { background: var(--card-hi); }
+  .chip .cg { font-weight: 800; font-size: 12px; }
+
+  textarea {
+    width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    color: var(--text); font-size: 15px; padding: 13px; resize: none; font-family: inherit;
+  }
+  textarea:focus { outline: none; border-color: var(--green); }
+
+  .grade-preview { padding: 8px 20px; }
+  .grade-preview-inner {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .gp-badge { font-size: 28px; font-weight: 800; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: var(--card-hi); flex-shrink: 0; }
+  .gp-text { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  .save-btn {
+    margin: 12px 20px 0; width: calc(100% - 40px);
+    background: var(--green); color: #08130C; border: none; border-radius: 14px;
+    padding: 16px; font-size: 16px; font-weight: 800; cursor: pointer;
+  }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn:disabled { opacity: 0.4; }
+
+  .tabs { display: flex; gap: 6px; padding: 4px 20px 12px; }
+  .tab { flex: 1; text-align: center; padding: 9px; border-radius: 10px; font-size: 12px; font-weight: 700; background: var(--card); border: 1px solid var(--line); color: var(--muted); cursor: pointer; }
+  .tab.active { background: var(--card-hi); color: var(--text); }
+
+  .empty-note { padding: 30px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--card-hi); border: 1px solid var(--line); color: var(--text);
+    padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 60;
+    opacity: 0; transition: all 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Heart Track</h1>
+    <div class="goal">LDL <b>184</b> → target <b>&lt;100</b></div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-label">Cholesterol goal</div>
+    <div class="hero-nums">
+      <span class="cur">184</span>
+      <span class="arrow">→</span>
+      <span class="goalnum">&lt;100</span>
+      <span class="unit">mg/dL LDL</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="ldlBar" style="width: 18%"></div></div>
+    <div class="hero-sub">84 points to go. Every clean meal chips away at it. Retest to update.</div>
+  </div>
+
+  <!-- Today -->
+  <div class="sec-title">Today</div>
+  <div class="today">
+    <div class="today-head">
+      <div class="today-date" id="todayDate">—</div>
+      <div class="day-grade" id="todayGrade">—</div>
+    </div>
+    <div id="todayMeals"></div>
+  </div>
+
+  <!-- Week trend -->
+  <div class="sec-title">The Climb <span id="trendRange" style="font-weight:600; letter-spacing:0; text-transform:none;"></span></div>
+  <div class="trend">
+    <div class="trend-bars" id="trendBars"></div>
+    <div class="trend-note" id="trendNote">Log meals to see your trend build.</div>
+  </div>
+
+  <!-- A-list -->
+  <div class="sec-title">Your A-List <span style="font-weight:600; letter-spacing:0; text-transform:none;">go-to wins</span></div>
+  <div class="alist" id="aList"></div>
+
+  <button class="fab" onclick="openSheet()">+ Log a meal</button>
+
+  <!-- Sheet -->
+  <div class="overlay" id="overlay">
+    <div class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head">
+        <h2>Log a meal</h2>
+        <button class="sheet-close" onclick="closeSheet()">✕</button>
+      </div>
+
+      <div class="field">
+        <label>Which meal?</label>
+        <div class="slot-pick" id="slotPick"></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" id="tabCommon" onclick="switchTab('common')">Pick common</div>
+        <div class="tab" id="tabNew" onclick="switchTab('new')">Type new</div>
+      </div>
+
+      <div id="commonPane" class="field">
+        <label>Tap one</label>
+        <div class="common-grid" id="commonGrid"></div>
+      </div>
+
+      <div id="newPane" class="field" style="display:none;">
+        <label>What did you eat?</label>
+        <textarea id="mealInput" rows="3" placeholder="e.g. grilled chicken, brown rice, broccoli, olive oil" oninput="gradeInput()"></textarea>
+      </div>
+
+      <div class="grade-preview">
+        <div class="grade-preview-inner">
+          <div class="gp-badge" id="gpBadge">—</div>
+          <div class="gp-text" id="gpText">Pick or type a meal and I'll grade it for your LDL goal.</div>
+        </div>
+      </div>
+
+      <button class="save-btn" id="saveBtn" onclick="saveMeal()" disabled>Add to today</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// ---------- Grading engine ----------
+// Scores a meal description for LDL-lowering impact.
+const GOOD = {
+  salmon:3, fish:2, tuna:2, chia:2, oats:2, oatmeal:2, 'brown rice':2, beans:2, lentil:2,
+  broccoli:2, spinach:2, veggie:2, vegetable:2, avocado:2, 'olive oil':2, berries:2, blueberr:2,
+  strawberr:1, banana:1, apple:1, 'chicken breast':2, 'grilled chicken':2, turkey:1, egg:1,
+  omelette:1, salsa:1, pico:1, quinoa:2, 'sweet potato':1, almond:1, nuts:1, pistachio:1,
+  'oat milk':1, 'almond milk':1, seltzer:1, 'sparkling water':1, water:1, tomato:1, pepper:1,
+  onion:1, kale:2, carrot:1, hummus:1, chickpea:2, 'pb2':1
+};
+const BAD = {
+  'sour cream':-2, cheese:-2, queso:-1, butter:-1, bacon:-3, sausage:-2, pepperoni:-2,
+  'fried':-3, 'deep-fried':-3, 'orange chicken':-3, 'fried rice':-2, 'white rice':-1,
+  pizza:-2, mozzarella:-2, cream:-2, brisket:-2, 'pulled pork':-2, beef:-2, steak:-2,
+  soda:-3, 'orange juice':-2, oj:-2, juice:-1, sugar:-1, honey:-1, agave:-1, syrup:-2,
+  candy:-3, dessert:-2, cake:-3, cookie:-2, 'ice cream':-3, pastry:-2, chips:-1, 'hot honey':-1,
+  mayo:-1, ranch:-1, 'chocolate':-1, donut:-3, tots:-2
+};
+function scoreMeal(txt){
+  const t = ' ' + txt.toLowerCase() + ' ';
+  let score = 0, hits = 0;
+  for (const k in GOOD){ if (t.includes(k)){ score += GOOD[k]; hits++; } }
+  for (const k in BAD){ if (t.includes(k)){ score += BAD[k]; hits++; } }
+  if (hits === 0) return null;
+  return score;
+}
+function scoreToGrade(s){
+  if (s === null) return {g:'?', c:'var(--muted)', why:'Add a bit more detail and I\'ll grade it.'};
+  if (s >= 5) return {g:'A+', c:'var(--green)', why:'Elite — high fiber, lean protein, omega-3s, almost no saturated fat.'};
+  if (s >= 3) return {g:'A', c:'var(--green)', why:'Great for your LDL goal. Fiber + lean protein doing work.'};
+  if (s >= 1) return {g:'B+', c:'var(--lime)', why:'Solid. A couple small swaps could push it to an A.'};
+  if (s >= 0) return {g:'B', c:'var(--lime)', why:'Decent balance. Watch the added sugar / refined carbs.'};
+  if (s >= -2) return {g:'B-', c:'var(--yellow)', why:'Okay in moderation. Some saturated fat or sugar creeping in.'};
+  if (s >= -4) return {g:'C', c:'var(--orange)', why:'Heavy on sat fat / sugar / fried stuff. Balance it with fiber next meal.'};
+  return {g:'C-', c:'var(--red)', why:'Fried + cheesy + sugary. Fine once in a while — not the everyday move.'};
+}
+function gradeColor(g){
+  if (g.startsWith('A')) return 'var(--green)';
+  if (g.startsWith('B+')||g==='B') return 'var(--lime)';
+  if (g.startsWith('B')) return 'var(--yellow)';
+  if (g.startsWith('C')&&g!=='C-') return 'var(--orange)';
+  if (g.startsWith('C')) return 'var(--red)';
+  return 'var(--muted)';
+}
+// average a list of letter grades -> letter
+const GVAL = {'A+':4.3,'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.3,'C':2.0,'C-':1.7,'D':1.0};
+function valToGrade(v){
+  const entries = Object.entries(GVAL);
+  let best='C', bd=99;
+  for (const [g,val] of entries){ if (Math.abs(val-v)<bd){bd=Math.abs(val-v);best=g;} }
+  return best;
+}
+function avgGrades(grades){
+  const vals = grades.filter(g=>GVAL[g]!==undefined).map(g=>GVAL[g]);
+  if (!vals.length) return '—';
+  return valToGrade(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+
+// ---------- Common meals ----------
+const COMMON = [
+  {name:'Chia oatmeal + berries', grade:'A'},
+  {name:'Veggie omelette (no cheese) + fruit', grade:'A'},
+  {name:'Pan-fried salmon + brown rice', grade:'A'},
+  {name:'Chicken breast + broccoli + potato', grade:'B+'},
+  {name:'Qdoba bowl (brown rice, black beans, veggies)', grade:'A'},
+  {name:'Chipotle veggie bowl (brown rice, beans)', grade:'A-'},
+  {name:'Açaí bowl + chia', grade:'B+'},
+  {name:'Avocado toast (whole grain)', grade:'B+'},
+  {name:'One-pan chicken + beans + tomatoes', grade:'A-'},
+  {name:'Cortado w/ oat milk', grade:'B+'},
+  {name:'Panda orange chicken + fried rice', grade:'C-'},
+  {name:'Pizza night (few slices)', grade:'C+'},
+];
+
+// ---------- State ----------
+let state = { days: {}, sel: {slot:'breakfast', mode:'common', text:'', grade:null} };
+const SLOTS = ['breakfast','lunch','dinner','snack'];
+
+function todayKey(){ const d = new Date(); return d.toISOString().slice(0,10); }
+function fmtDate(key){
+  const d = new Date(key+'T12:00:00');
+  return d.toLocaleDateString('en-US',{weekday:'long', month:'numeric', day:'numeric'});
+}
+function shortDay(key){
+  const d = new Date(key+'T12:00:00');
+  return d.toLocaleDateString('en-US',{weekday:'short'})[0];
+}
+
+// ---------- Persistence (localStorage — works on any hosted site) ----------
+function loadState(){
+  try {
+    const raw = localStorage.getItem('hearttrack-data');
+    if (raw){ state.days = JSON.parse(raw); }
+  } catch(e){ /* first run */ }
+  if (Object.keys(state.days).length === 0){ seedWeek(); persist(); }
+}
+function persist(){
+  try { localStorage.setItem('hearttrack-data', JSON.stringify(state.days)); } catch(e){}
+}
+function seedWeek(){
+  state.days = {
+    '2026-06-29': { grade:'C+', meals:[
+      {slot:'breakfast', name:'Aldi oatmeal + chia + PB2 + OJ', grade:'B'},
+      {slot:'lunch', name:'Açaí bowl (Anthem, Verrado) + sparkling water', grade:'B+'},
+      {slot:'dinner', name:'Pan-fried salmon + white rice', grade:'B'},
+    ]},
+    '2026-06-30': { grade:'C', meals:[
+      {slot:'breakfast', name:'Playa Bowls açaí', grade:'B+'},
+      {slot:'lunch', name:'2 avocado toasts + Chipotle bowl (sour cream, cheese, white rice)', grade:'C'},
+      {slot:'dinner', name:'Panda Express orange chicken + fried rice + broccoli', grade:'C-'},
+    ]},
+    '2026-07-01': { grade:'B', meals:[
+      {slot:'breakfast', name:'Airport SuperFruit bowl (oat milk swap + chia)', grade:'B'},
+      {slot:'lunch', name:'Stitch OKC bowl: rice, beans, hot honey chicken, veggies + salad + salsa', grade:'B+'},
+      {slot:'dinner', name:'Chicken breast + broccoli + potato', grade:'B+'},
+    ]},
+    '2026-07-02': { grade:'B-', meals:[
+      {slot:'breakfast', name:'Veggie omelette (no cheese) + salsa + berries + banana', grade:'A'},
+      {slot:'lunch', name:'Qdoba bowl: brown rice, black beans, veggies, lemon vinaigrette', grade:'A'},
+      {slot:'snack', name:'6 Trufru chocolate strawberries', grade:'C+'},
+      {slot:'dinner', name:"Hall's pizza — 4 slices + pita", grade:'C+'},
+    ]},
+    '2026-07-03': { grade:'B+', meals:[
+      {slot:'breakfast', name:'Instant oatmeal + blackberries + banana + honey', grade:'B+'},
+      {slot:'dinner', name:'Chicken breast + corn + tomatoes + beans; Siete chips + queso; salsa', grade:'A-'},
+    ]},
+  };
+}
+
+// ---------- Render ----------
+function render(){
+  const tk = todayKey();
+  document.getElementById('todayDate').textContent = fmtDate(tk);
+  const today = state.days[tk] || {meals:[]};
+
+  // today meals
+  const wrap = document.getElementById('todayMeals');
+  wrap.innerHTML = '';
+  const byslot = {};
+  (today.meals||[]).forEach(m => { (byslot[m.slot] = byslot[m.slot]||[]).push(m); });
+  ['breakfast','lunch','dinner','snack'].forEach(slot => {
+    const items = byslot[slot];
+    if (items){
+      items.forEach(m => wrap.appendChild(mealRow(slot, m)));
+    } else if (slot !== 'snack'){
+      const row = document.createElement('div');
+      row.className = 'meal-row meal-empty';
+      row.innerHTML = `<div class="meal-slot">${slot.slice(0,3)}</div><div class="meal-body"><div class="meal-name">Not logged yet</div></div><div class="meal-grade">–</div>`;
+      wrap.appendChild(row);
+    }
+  });
+  // today grade
+  const tg = avgGrades((today.meals||[]).map(m=>m.grade));
+  const tgEl = document.getElementById('todayGrade');
+  tgEl.textContent = tg;
+  tgEl.style.color = gradeColor(tg);
+
+  renderTrend();
+  renderAList();
+  document.getElementById('ldlBar').style.width = '18%';
+}
+function mealRow(slot, m){
+  const row = document.createElement('div');
+  row.className = 'meal-row';
+  row.innerHTML = `
+    <div class="meal-slot">${slot.slice(0,3)}</div>
+    <div class="meal-body"><div class="meal-name">${escapeHtml(m.name)}</div></div>
+    <div class="meal-grade" style="color:${gradeColor(m.grade)}">${m.grade}</div>`;
+  row.onclick = () => { if (confirm('Remove this meal?')) removeMeal(todayKey(), m); };
+  return row;
+}
+function renderTrend(){
+  const keys = Object.keys(state.days).sort().slice(-7);
+  const bars = document.getElementById('trendBars');
+  bars.innerHTML = '';
+  document.getElementById('trendRange').textContent = keys.length ? `${fmtShort(keys[0])}–${fmtShort(keys[keys.length-1])}` : '';
+  keys.forEach(k => {
+    const g = state.days[k].grade || avgGrades((state.days[k].meals||[]).map(m=>m.grade));
+    const v = GVAL[g] || 2;
+    const pct = Math.max(8, ((v-1.5)/(4.3-1.5))*100);
+    const col = gradeColor(g);
+    const c = document.createElement('div');
+    c.className = 'trend-col';
+    c.innerHTML = `
+      <div class="trend-val" style="color:${col}">${g}</div>
+      <div class="trend-bar" style="height:${pct}%; background:${col}"></div>
+      <div class="trend-day">${shortDay(k)}</div>`;
+    bars.appendChild(c);
+  });
+  // trend note
+  const grades = keys.map(k => state.days[k].grade || avgGrades((state.days[k].meals||[]).map(m=>m.grade)));
+  const vals = grades.map(g=>GVAL[g]||2);
+  if (vals.length >= 2){
+    const rising = vals[vals.length-1] >= vals[0];
+    const note = document.getElementById('trendNote');
+    if (rising){
+      note.innerHTML = `Trending <b>up</b> ↗ — this week's avg is <b>${avgGrades(grades)}</b>. Keep stacking clean days.`;
+    } else {
+      note.innerHTML = `This week's avg is <b>${avgGrades(grades)}</b>. One clean day resets the climb.`;
+    }
+  }
+}
+function fmtShort(key){ const d=new Date(key+'T12:00:00'); return d.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}); }
+
+function renderAList(){
+  // gather all A/A+/A- meals ever logged, unique by name, most recent first
+  const seen = new Set(); const wins = [];
+  Object.keys(state.days).sort().reverse().forEach(k => {
+    (state.days[k].meals||[]).forEach(m => {
+      if (m.grade && m.grade.startsWith('A') && !seen.has(m.name.toLowerCase())){
+        seen.add(m.name.toLowerCase()); wins.push(m);
+      }
+    });
+  });
+  const el = document.getElementById('aList');
+  if (!wins.length){
+    el.innerHTML = `<div class="empty-note">Log an A-grade meal and it lands here as a go-to.</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  wins.slice(0,8).forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'alist-item';
+    d.innerHTML = `<div class="alist-dot"></div><div class="alist-name">${escapeHtml(m.name)}</div><div class="alist-grade">${m.grade}</div>`;
+    el.appendChild(d);
+  });
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Sheet logic ----------
+function openSheet(){
+  state.sel = {slot:'breakfast', mode:'common', text:'', grade:null};
+  buildSlots(); buildCommon(); switchTab('common');
+  document.getElementById('mealInput').value = '';
+  updateGradePreview();
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSheet(){ document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', e => { if (e.target.id==='overlay') closeSheet(); });
+
+function buildSlots(){
+  const el = document.getElementById('slotPick'); el.innerHTML='';
+  SLOTS.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'slot-btn' + (s===state.sel.slot?' active':'');
+    b.textContent = s;
+    b.onclick = () => { state.sel.slot = s; buildSlots(); };
+    el.appendChild(b);
+  });
+}
+function buildCommon(){
+  const el = document.getElementById('commonGrid'); el.innerHTML='';
+  COMMON.forEach(m => {
+    const c = document.createElement('div');
+    c.className = 'chip';
+    c.innerHTML = `${escapeHtml(m.name)} <span class="cg" style="color:${gradeColor(m.grade)}">${m.grade}</span>`;
+    c.onclick = () => { state.sel.text = m.name; state.sel.grade = m.grade; state.sel.mode='common'; updateGradePreview(); flashChip(c); };
+    el.appendChild(c);
+  });
+}
+let lastChip=null;
+function flashChip(c){ if(lastChip) lastChip.style.background=''; c.style.background='var(--card-hi)'; c.style.borderColor='var(--green)'; lastChip=c; }
+function switchTab(mode){
+  state.sel.mode = mode;
+  document.getElementById('tabCommon').classList.toggle('active', mode==='common');
+  document.getElementById('tabNew').classList.toggle('active', mode==='new');
+  document.getElementById('commonPane').style.display = mode==='common'?'block':'none';
+  document.getElementById('newPane').style.display = mode==='new'?'block':'none';
+  if (mode==='new'){ state.sel.grade=null; gradeInput(); }
+}
+function gradeInput(){
+  const txt = document.getElementById('mealInput').value.trim();
+  state.sel.text = txt;
+  const s = scoreMeal(txt);
+  const res = scoreToGrade(s);
+  state.sel.grade = txt ? res.g : null;
+  updateGradePreview(res);
+}
+function updateGradePreview(res){
+  const badge = document.getElementById('gpBadge');
+  const text = document.getElementById('gpText');
+  let g = state.sel.grade;
+  if (state.sel.mode==='common' && g){
+    badge.textContent = g; badge.style.color = gradeColor(g);
+    text.textContent = commonWhy(g);
+  } else if (state.sel.mode==='new'){
+    const r = res || scoreToGrade(scoreMeal(state.sel.text||''));
+    if (state.sel.text){ badge.textContent = r.g; badge.style.color = r.c; text.textContent = r.why; }
+    else { badge.textContent='—'; badge.style.color='var(--muted)'; text.textContent='Type what you ate and I\'ll grade it for your LDL goal.'; }
+  } else {
+    badge.textContent='—'; badge.style.color='var(--muted)';
+    text.textContent='Pick or type a meal and I\'ll grade it.';
+  }
+  document.getElementById('saveBtn').disabled = !(state.sel.text && state.sel.grade);
+}
+function commonWhy(g){
+  if (g.startsWith('A')) return 'A go-to win. Fiber + lean protein, low saturated fat.';
+  if (g.startsWith('B')) return 'Solid choice. Balanced, with room to fine-tune.';
+  return 'Fine once in a while — balance it with fiber the next meal.';
+}
+function saveMeal(){
+  const tk = todayKey();
+  if (!state.days[tk]) state.days[tk] = {meals:[]};
+  state.days[tk].meals.push({slot:state.sel.slot, name:state.sel.text, grade:state.sel.grade});
+  state.days[tk].grade = avgGrades(state.days[tk].meals.map(m=>m.grade));
+  persist();
+  closeSheet(); render();
+  showToast(`${state.sel.grade} logged for ${state.sel.slot}`);
+}
+function removeMeal(key, meal){
+  const day = state.days[key]; if(!day) return;
+  const i = day.meals.findIndex(m => m.name===meal.name && m.slot===meal.slot && m.grade===meal.grade);
+  if (i>=0){ day.meals.splice(i,1); day.grade = avgGrades(day.meals.map(m=>m.grade)); persist(); render(); }
+}
+function showToast(msg){
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+// ---------- Init ----------
+loadState(); render();
+</script>
+</body>
+</html>
